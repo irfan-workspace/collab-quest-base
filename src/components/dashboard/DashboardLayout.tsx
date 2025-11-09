@@ -3,7 +3,7 @@ import { User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Users, Calendar, CheckSquare, Bell, LogOut, LayoutDashboard, UserCircle } from "lucide-react";
+import { Users, Calendar, CheckSquare, Bell, LogOut, LayoutDashboard, UserCircle, MessageSquare, BarChart3, Settings, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DashboardLayoutProps {
@@ -31,6 +31,15 @@ const DashboardLayout = ({ children, user, isAdmin }: DashboardLayoutProps) => {
     { icon: Calendar, label: "Events", path: "/events" },
     { icon: CheckSquare, label: "Tasks", path: "/tasks" },
     { icon: Bell, label: "Announcements", path: "/announcements" },
+    { icon: MessageSquare, label: "Chat", path: "/chat" },
+    { icon: BarChart3, label: "Polls", path: "/polls" },
+  ];
+
+  const adminNavItems = [
+    { icon: Shield, label: "Manage Team", path: "/admin/team" },
+    { icon: Calendar, label: "Manage Events", path: "/admin/events" },
+    { icon: CheckSquare, label: "Manage Tasks", path: "/admin/tasks" },
+    { icon: Bell, label: "Manage Announcements", path: "/admin/announcements" },
   ];
 
   return (
@@ -52,6 +61,15 @@ const DashboardLayout = ({ children, user, isAdmin }: DashboardLayoutProps) => {
             </div>
             
             <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/profile")}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Profile
+              </Button>
               <div className="flex items-center space-x-2 px-3 py-1.5 bg-secondary rounded-lg">
                 <UserCircle className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-foreground">{user?.email}</span>
@@ -69,7 +87,7 @@ const DashboardLayout = ({ children, user, isAdmin }: DashboardLayoutProps) => {
           </div>
           
           {/* Navigation Links */}
-          <div className="flex space-x-1 pb-3">
+          <div className="flex space-x-1 pb-3 overflow-x-auto">
             {navItems.map((item) => (
               <Button
                 key={item.path}
@@ -82,6 +100,23 @@ const DashboardLayout = ({ children, user, isAdmin }: DashboardLayoutProps) => {
                 {item.label}
               </Button>
             ))}
+            {isAdmin && (
+              <>
+                <div className="w-px bg-border mx-2" />
+                {adminNavItems.map((item) => (
+                  <Button
+                    key={item.path}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(item.path)}
+                    className="text-primary hover:text-primary hover:bg-primary/10"
+                  >
+                    <item.icon className="h-4 w-4 mr-2" />
+                    {item.label}
+                  </Button>
+                ))}
+              </>
+            )}
           </div>
         </div>
       </nav>
