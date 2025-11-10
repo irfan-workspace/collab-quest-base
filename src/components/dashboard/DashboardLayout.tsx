@@ -1,10 +1,11 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Users, Calendar, CheckSquare, Bell, LogOut, LayoutDashboard, UserCircle, MessageSquare, BarChart3, Settings, Shield } from "lucide-react";
+import { Users, Calendar, CheckSquare, Bell, LogOut, LayoutDashboard, UserCircle, MessageSquare, BarChart3, Settings, Shield, BellRing } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -15,6 +16,13 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children, user, isAdmin }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  // Enable real-time notifications
+  useRealtimeNotifications({ 
+    userId: user?.id, 
+    isEnabled: notificationsEnabled 
+  });
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -61,6 +69,28 @@ const DashboardLayout = ({ children, user, isAdmin }: DashboardLayoutProps) => {
             </div>
             
             <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setNotificationsEnabled(!notificationsEnabled);
+                  toast({
+                    title: notificationsEnabled ? "Notifications disabled" : "Notifications enabled",
+                    description: notificationsEnabled 
+                      ? "You won't receive real-time updates" 
+                      : "You'll receive real-time updates",
+                  });
+                }}
+                className={`text-muted-foreground hover:text-foreground ${notificationsEnabled ? "text-primary" : ""}`}
+                title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
+              >
+                {notificationsEnabled ? (
+                  <BellRing className="h-4 w-4 mr-2" />
+                ) : (
+                  <Bell className="h-4 w-4 mr-2" />
+                )}
+                {notificationsEnabled ? "On" : "Off"}
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
