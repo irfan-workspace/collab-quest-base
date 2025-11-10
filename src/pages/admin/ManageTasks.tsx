@@ -78,44 +78,37 @@ const ManageTasks = () => {
   };
 
   const loadData = async () => {
-    const { data: tasksData, error: tasksError } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [tasksResult, profilesResult] = await Promise.all([
+      supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("profiles")
+        .select("id, full_name")
+    ]);
 
-    const { data: profilesData, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, full_name");
-
-    if (tasksError) {
-      console.error("Error loading tasks:", tasksError);
+    if (tasksResult.error) {
+      console.error("Error loading tasks:", tasksResult.error);
       toast.error("Failed to load tasks");
       return;
     }
 
-    if (profilesError) {
-      console.error("Error loading profiles:", profilesError);
+    if (profilesResult.error) {
+      console.error("Error loading profiles:", profilesResult.error);
+      setProfiles([]);
     } else {
-      setProfiles(profilesData || []);
+      setProfiles(profilesResult.data || []);
     }
 
-    const tasksWithProfiles = await Promise.all(
-      (tasksData || []).map(async (task) => {
-        if (task.assigned_to) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", task.assigned_to)
-            .single();
-
-          return {
-            ...task,
-            profiles: profile
-          };
-        }
-        return task;
-      })
+    const profilesMap = new Map(
+      (profilesResult.data || []).map(p => [p.id, p])
     );
+
+    const tasksWithProfiles = (tasksResult.data || []).map(task => ({
+      ...task,
+      profiles: task.assigned_to ? profilesMap.get(task.assigned_to) : null
+    }));
 
     setTasks(tasksWithProfiles);
   };

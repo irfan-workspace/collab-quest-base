@@ -67,32 +67,31 @@ const Chat = () => {
   };
 
   const loadMessages = async () => {
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("is_private", false)
-      .order("created_at", { ascending: true });
+    const [messagesResult, profilesResult] = await Promise.all([
+      supabase
+        .from("messages")
+        .select("*")
+        .eq("is_private", false)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("profiles")
+        .select("id, full_name")
+    ]);
 
-    if (error) {
-      console.error("Error loading messages:", error);
+    if (messagesResult.error) {
+      console.error("Error loading messages:", messagesResult.error);
       toast.error("Failed to load messages");
       return;
     }
 
-    const messagesWithProfiles = await Promise.all(
-      (data || []).map(async (msg) => {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", msg.user_id)
-          .single();
-
-        return {
-          ...msg,
-          profiles: profile
-        };
-      })
+    const profilesMap = new Map(
+      (profilesResult.data || []).map(p => [p.id, p])
     );
+
+    const messagesWithProfiles = (messagesResult.data || []).map(msg => ({
+      ...msg,
+      profiles: profilesMap.get(msg.user_id)
+    }));
 
     setMessages(messagesWithProfiles);
   };

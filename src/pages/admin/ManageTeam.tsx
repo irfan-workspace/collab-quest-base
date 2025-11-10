@@ -53,29 +53,24 @@ const ManageTeam = () => {
   };
 
   const loadMembers = async () => {
-    const { data: profilesData, error: profilesError } = await supabase
-      .from("profiles")
-      .select("*");
+    const [profilesResult, rolesResult] = await Promise.all([
+      supabase.from("profiles").select("*"),
+      supabase.from("user_roles").select("user_id, role")
+    ]);
 
-    if (profilesError) {
-      console.error("Error loading profiles:", profilesError);
+    if (profilesResult.error) {
+      console.error("Error loading profiles:", profilesResult.error);
       return;
     }
 
-    const membersWithRoles = await Promise.all(
-      (profilesData || []).map(async (profile) => {
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", profile.id)
-          .single();
-
-        return {
-          ...profile,
-          role: roleData?.role || "member"
-        };
-      })
+    const rolesMap = new Map(
+      (rolesResult.data || []).map(r => [r.user_id, r.role])
     );
+
+    const membersWithRoles = (profilesResult.data || []).map((profile: any) => ({
+      ...profile,
+      role: rolesMap.get(profile.id) || "member"
+    }));
 
     setMembers(membersWithRoles);
   };

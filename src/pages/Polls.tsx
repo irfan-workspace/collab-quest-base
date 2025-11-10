@@ -68,7 +68,11 @@ const Polls = () => {
   const loadPolls = async () => {
     const { data: pollsData, error: pollsError } = await supabase
       .from("polls")
-      .select("*")
+      .select(`
+        *,
+        poll_options(*),
+        poll_votes(*)
+      `)
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
@@ -79,25 +83,23 @@ const Polls = () => {
 
     setPolls(pollsData || []);
 
+    const options: Record<string, PollOption[]> = {};
+    const votes: Record<string, PollVote[]> = {};
+    const userVotesMap: Record<string, string> = {};
+
     for (const poll of pollsData || []) {
-      const { data: optionsData } = await supabase
-        .from("poll_options")
-        .select("*")
-        .eq("poll_id", poll.id);
-
-      const { data: votesData } = await supabase
-        .from("poll_votes")
-        .select("*")
-        .eq("poll_id", poll.id);
-
-      setPollOptions(prev => ({ ...prev, [poll.id]: optionsData || [] }));
-      setPollVotes(prev => ({ ...prev, [poll.id]: votesData || [] }));
-
-      const userVote = votesData?.find(v => v.user_id === user?.id);
+      options[poll.id] = poll.poll_options || [];
+      votes[poll.id] = poll.poll_votes || [];
+      
+      const userVote = poll.poll_votes?.find(v => v.user_id === user?.id);
       if (userVote) {
-        setUserVotes(prev => ({ ...prev, [poll.id]: userVote.option_id }));
+        userVotesMap[poll.id] = userVote.option_id;
       }
     }
+
+    setPollOptions(options);
+    setPollVotes(votes);
+    setUserVotes(userVotesMap);
   };
 
   const handleVote = async (pollId: string, optionId: string) => {
