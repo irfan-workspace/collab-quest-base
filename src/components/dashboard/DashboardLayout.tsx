@@ -1,8 +1,9 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Calendar, CheckSquare, Bell, LogOut, LayoutDashboard, UserCircle, MessageSquare, BarChart3, Settings, Shield, BellRing } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
@@ -17,12 +18,32 @@ const DashboardLayout = ({ children, user, isAdmin }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   // Enable real-time notifications
   useRealtimeNotifications({ 
     userId: user?.id, 
     isEnabled: notificationsEnabled 
   });
+
+  // Load user avatar
+  useEffect(() => {
+    if (user?.id) {
+      loadUserAvatar();
+    }
+  }, [user?.id]);
+
+  const loadUserAvatar = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", user?.id)
+      .single();
+    
+    if (data?.avatar_url) {
+      setAvatarUrl(data.avatar_url);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -101,7 +122,15 @@ const DashboardLayout = ({ children, user, isAdmin }: DashboardLayoutProps) => {
                 Profile
               </Button>
               <div className="flex items-center space-x-2 px-3 py-1.5 bg-secondary rounded-lg">
-                <UserCircle className="h-4 w-4 text-muted-foreground" />
+                <Avatar className="h-6 w-6">
+                  {avatarUrl ? (
+                    <AvatarImage src={avatarUrl} alt="User avatar" />
+                  ) : (
+                    <AvatarFallback className="bg-primary/20">
+                      <UserCircle className="h-4 w-4 text-primary" />
+                    </AvatarFallback>
+                  )}
+                </Avatar>
                 <span className="text-sm text-foreground">{user?.email}</span>
               </div>
               <Button

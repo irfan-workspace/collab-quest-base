@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, UserCircle } from "lucide-react";
 
@@ -81,10 +81,14 @@ const Team = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
-                      <Avatar className="h-12 w-12 bg-primary/10">
-                        <AvatarFallback className="bg-primary/20 text-primary">
-                          <UserCircle className="h-6 w-6" />
-                        </AvatarFallback>
+                      <Avatar className="h-12 w-12 border-2 border-primary/20">
+                        {member.avatar_url ? (
+                          <AvatarImage src={member.avatar_url} alt={member.full_name} />
+                        ) : (
+                          <AvatarFallback className="bg-primary/20 text-primary">
+                            <UserCircle className="h-6 w-6" />
+                          </AvatarFallback>
+                        )}
                       </Avatar>
                       <div>
                         <CardTitle className="text-lg">{member.full_name}</CardTitle>
