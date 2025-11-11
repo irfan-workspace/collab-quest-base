@@ -17,6 +17,59 @@ const MemberDashboard = ({ user }: MemberDashboardProps) => {
   useEffect(() => {
     if (user) {
       loadMyData();
+      
+      // Subscribe to real-time changes
+      const tasksChannel = supabase
+        .channel('member-tasks-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'tasks',
+            filter: `assigned_to=eq.${user.id}`
+          },
+          () => {
+            loadMyData();
+          }
+        )
+        .subscribe();
+
+      const eventsChannel = supabase
+        .channel('member-events-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'events'
+          },
+          () => {
+            loadMyData();
+          }
+        )
+        .subscribe();
+
+      const announcementsChannel = supabase
+        .channel('member-announcements-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'announcements'
+          },
+          () => {
+            loadMyData();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(tasksChannel);
+        supabase.removeChannel(eventsChannel);
+        supabase.removeChannel(announcementsChannel);
+      };
     }
   }, [user]);
 
