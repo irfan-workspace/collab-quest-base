@@ -12,6 +12,7 @@ interface MemberDashboardProps {
 const MemberDashboard = ({ user }: MemberDashboardProps) => {
   const [myTasks, setMyTasks] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -20,7 +21,7 @@ const MemberDashboard = ({ user }: MemberDashboardProps) => {
   }, [user]);
 
   const loadMyData = async () => {
-    const [tasksRes, eventsRes] = await Promise.all([
+    const [tasksRes, eventsRes, announcementsRes] = await Promise.all([
       supabase
         .from("tasks")
         .select("*")
@@ -34,10 +35,19 @@ const MemberDashboard = ({ user }: MemberDashboardProps) => {
         .eq("status", "upcoming")
         .order("event_date", { ascending: true })
         .limit(3),
+      supabase
+        .from("announcements")
+        .select(`
+          *,
+          profiles:created_by(full_name)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(3),
     ]);
 
     setMyTasks(tasksRes.data || []);
     setUpcomingEvents(eventsRes.data || []);
+    setAnnouncements(announcementsRes.data || []);
   };
 
   return (
@@ -122,9 +132,32 @@ const MemberDashboard = ({ user }: MemberDashboardProps) => {
           <CardDescription>Stay updated with team news</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No recent announcements
-          </p>
+          {announcements.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No recent announcements
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {announcements.map((announcement) => (
+                <div 
+                  key={announcement.id} 
+                  className={`p-3 rounded-lg border ${
+                    announcement.is_important 
+                      ? 'bg-primary/5 border-primary/30' 
+                      : 'bg-secondary/50 border-border'
+                  }`}
+                >
+                  <p className="font-medium text-sm text-foreground">{announcement.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {announcement.content}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {format(new Date(announcement.created_at), "PPP")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
